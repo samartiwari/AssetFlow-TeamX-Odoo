@@ -10,6 +10,7 @@ import {
 } from "../api/assets";
 import StatusBadge from "../components/StatusBadge";
 import RegisterAssetModal from "../components/RegisterAssetModal";
+import AssetDetailDrawer from "../components/AssetDetailDrawer";
 import { useAuth } from "../auth/AuthContext";
 
 const STATUS_OPTIONS = [
@@ -28,6 +29,7 @@ export default function Assets() {
 
   const [filters, setFilters] = useState<AssetFilters>({});
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -112,11 +114,20 @@ export default function Assets() {
         columns={columns}
         dataSource={assets}
         pagination={{ pageSize: 10, showSizeChanger: false }}
+        onRow={(record) => ({
+          onClick: () => setSelectedId(record.id),
+          style: { cursor: "pointer" },
+        })}
       />
 
       <RegisterAssetModal
         open={registerOpen}
         onClose={() => setRegisterOpen(false)}
+      />
+
+      <AssetDetailDrawer
+        assetId={selectedId}
+        onClose={() => setSelectedId(null)}
       />
     </div>
   );

@@ -11,3 +11,94 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  EMPLOYEE
+  DEPT_HEAD
+  ASSET_MANAGER
+  ADMIN
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ALLOCATED
+  RESERVED
+  UNDER_MAINTENANCE
+  LOST
+  RETIRED
+  DISPOSED
+}
+
+enum TransferStatus {
+  REQUESTED
+  APPROVED
+  REALLOCATED
+}
+
+enum MaintenanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  TECH_ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum AuditVerdict {
+  VERIFIED
+  MISSING
+  DAMAGED
+}
+
+enum BookingStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Core identity & master data
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(EMPLOYEE)
+  departmentId String?
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  department        Department?  @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  headedDepartments Department[] @relation("DepartmentHead")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  headId    String?
+  parentId  String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  head     User?        @relation("DepartmentHead", fields: [headId], references: [id])
+  parent   Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children Department[] @relation("DepartmentHierarchy")
+  members  User[]       @relation("DepartmentMembers")
+}
+
+model Category {
+  id           String   @id @default(cuid())
+  name         String
+  customFields Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

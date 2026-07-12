@@ -35,6 +35,31 @@ router.get("/", requireAuth, async (req, res) => {
   return ok(res, { assets });
 });
 
+// Full detail for one asset, including its allocation and maintenance history
+// (newest first) so the detail view can show both timelines.
+router.get("/:id", requireAuth, async (req, res) => {
+  const asset = await prisma.asset.findUnique({
+    where: { id: req.params.id },
+    include: {
+      category: { select: { id: true, name: true } },
+      allocations: {
+        orderBy: { allocatedAt: "desc" },
+        include: { holder: { select: { id: true, name: true } } },
+      },
+      maintenance: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          raisedBy: { select: { id: true, name: true } },
+          technician: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  if (!asset) return fail(res, 404, "Asset not found");
+  return ok(res, { asset });
+});
+
 // Register a new asset. Only asset managers and admins can add stock. The tag
 // is generated and the row inserted in one transaction so concurrent
 // registrations get distinct tags.

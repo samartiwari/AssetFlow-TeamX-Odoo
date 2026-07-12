@@ -1,14 +1,7 @@
 import { Tag } from "antd";
 import { statusColor } from "../theme/tokens";
 import { useThemeMode } from "../theme/ThemeProvider";
-
-// Turns UNDER_MAINTENANCE / "under maintenance" into "Under Maintenance".
-function toLabel(status: string): string {
-  return status
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+import { toLabel } from "../lib/format";
 
 export default function StatusBadge({ status }: { status: string }) {
   const { mode } = useThemeMode();

@@ -1,13 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  Drawer,
-  Descriptions,
-  Tabs,
-  Table,
-  Spin,
-  Space,
-  Typography,
-} from "antd";
+import { Drawer, Descriptions, Tabs, Table, Spin, Space } from "antd";
 import dayjs from "dayjs";
 import { fetchAsset } from "../api/assets";
 import StatusBadge from "./StatusBadge";
@@ -131,7 +123,7 @@ export default function AssetDetailDrawer({
                       {
                         title: "Status",
                         render: (_, m: Maintenance) => (
-                          <Typography.Text>{m.status}</Typography.Text>
+                          <StatusBadge status={m.status} />
                         ),
                       },
                     ]}

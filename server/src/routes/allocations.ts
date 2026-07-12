@@ -120,13 +120,15 @@ router.post(
 
     const parsed = returnSchema.safeParse(req.body);
     if (!parsed.success) {
-      return fail(res, 400, "Invalid return details");
+      return fail(res, 400, "Invalid return details", {
+        issues: parsed.error.issues,
+      });
     }
 
     const allocation = await prisma.allocation.findUnique({ where: { id } });
     if (!allocation) return fail(res, 404, "Allocation not found");
     if (allocation.returnedAt) {
-      return fail(res, 400, "This allocation has already been returned");
+      return fail(res, 409, "This allocation has already been returned");
     }
 
     const updated = await prisma.$transaction(async (tx) => {

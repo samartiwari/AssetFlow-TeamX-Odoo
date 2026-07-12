@@ -76,8 +76,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  department        Department?  @relation("DepartmentMembers", fields: [departmentId], references: [id])
-  headedDepartments Department[] @relation("DepartmentHead")
+  department        Department?       @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  headedDepartments Department[]      @relation("DepartmentHead")
+  allocations       Allocation[]
+  transfersFrom     TransferRequest[] @relation("TransferFrom")
+  transfersTo       TransferRequest[] @relation("TransferTo")
 }
 
 model Department {
@@ -125,5 +128,39 @@ model Asset {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  category Category @relation(fields: [categoryId], references: [id])
+  category         Category          @relation(fields: [categoryId], references: [id])
+  allocations      Allocation[]
+  transferRequests TransferRequest[]
+}
+
+// ---------------------------------------------------------------------------
+// Allocation & transfer
+// ---------------------------------------------------------------------------
+
+model Allocation {
+  id                 String    @id @default(cuid())
+  assetId            String
+  holderId           String
+  allocatedAt        DateTime  @default(now())
+  expectedReturnDate DateTime?
+  returnedAt         DateTime?
+  conditionNotes     String?
+
+  asset  Asset @relation(fields: [assetId], references: [id])
+  holder User  @relation(fields: [holderId], references: [id])
+}
+
+model TransferRequest {
+  id         String         @id @default(cuid())
+  assetId    String
+  fromUserId String
+  toUserId   String
+  status     TransferStatus @default(REQUESTED)
+  reason     String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  asset    Asset @relation(fields: [assetId], references: [id])
+  fromUser User  @relation("TransferFrom", fields: [fromUserId], references: [id])
+  toUser   User  @relation("TransferTo", fields: [toUserId], references: [id])
 }

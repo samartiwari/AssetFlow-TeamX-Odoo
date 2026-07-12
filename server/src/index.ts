@@ -7,6 +7,7 @@ import assetRoutes from "./routes/assets.js";
 import departmentRoutes from "./routes/departments.js";
 import categoryRoutes from "./routes/categories.js";
 import userRoutes from "./routes/users.js";
+import maintenanceRoutes from "./routes/maintenance.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/assets", assetRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {

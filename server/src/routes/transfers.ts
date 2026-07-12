@@ -31,7 +31,9 @@ const createSchema = z.object({
 router.post("/", requireAuth, async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
-    return fail(res, 400, "Invalid transfer request");
+    return fail(res, 400, "Invalid transfer request", {
+      issues: parsed.error.issues,
+    });
   }
   const { assetId, toUserId, reason } = parsed.data;
 
@@ -68,7 +70,7 @@ router.patch(
     const transfer = await prisma.transferRequest.findUnique({ where: { id } });
     if (!transfer) return fail(res, 404, "Transfer not found");
     if (transfer.status !== "REQUESTED") {
-      return fail(res, 400, "This transfer has already been decided");
+      return fail(res, 409, "This transfer has already been decided");
     }
 
     // APPROVE → re-allocate in one transaction.

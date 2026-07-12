@@ -53,7 +53,9 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    return fail(res, 400, "Invalid login details");
+    return fail(res, 400, "Invalid login details", {
+      issues: parsed.error.issues,
+    });
   }
   const { email, password } = parsed.data;
 

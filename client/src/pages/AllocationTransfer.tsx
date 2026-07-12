@@ -29,6 +29,8 @@ import {
 import { fetchAssets } from "../api/assets";
 import { fetchUsers } from "../api/org";
 import { useAuth } from "../auth/AuthContext";
+import StatusBadge from "../components/StatusBadge";
+import { errorMessage } from "../lib/format";
 
 export default function AllocationTransfer() {
   const [form] = Form.useForm();
@@ -54,11 +56,11 @@ export default function AllocationTransfer() {
     queryKey: ["users"],
     queryFn: fetchUsers,
   });
-  const { data: allocations = [] } = useQuery({
+  const { data: allocations = [], isLoading: allocationsLoading } = useQuery({
     queryKey: ["allocations", "open"],
     queryFn: () => fetchAllocations({ open: true }),
   });
-  const { data: transfers = [] } = useQuery({
+  const { data: transfers = [], isLoading: transfersLoading } = useQuery({
     queryKey: ["transfers"],
     queryFn: fetchTransfers,
   });
@@ -70,7 +72,8 @@ export default function AllocationTransfer() {
       queryClient.invalidateQueries({ queryKey: ["allocations"] });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     },
-    onError: () => message.error("Could not return the asset"),
+    onError: (err) =>
+      message.error(errorMessage(err, "Could not return the asset")),
   });
 
   const approve = useMutation({
@@ -80,7 +83,8 @@ export default function AllocationTransfer() {
       queryClient.invalidateQueries({ queryKey: ["transfers"] });
       queryClient.invalidateQueries({ queryKey: ["allocations"] });
     },
-    onError: () => message.error("Could not approve the transfer"),
+    onError: (err) =>
+      message.error(errorMessage(err, "Could not approve the transfer")),
   });
 
   const allocate = useMutation({
@@ -102,7 +106,7 @@ export default function AllocationTransfer() {
           toUserId: vars.holderId,
         });
       } else {
-        message.error("Could not allocate the asset");
+        message.error(errorMessage(err, "Could not allocate the asset"));
       }
     },
   });
@@ -115,7 +119,8 @@ export default function AllocationTransfer() {
       form.resetFields();
       queryClient.invalidateQueries({ queryKey: ["transfers"] });
     },
-    onError: () => message.error("Could not submit the transfer"),
+    onError: (err) =>
+      message.error(errorMessage(err, "Could not submit the transfer")),
   });
 
   function onFinish(values: {
@@ -169,7 +174,10 @@ export default function AllocationTransfer() {
     },
     { title: "From", render: (_: unknown, t: Transfer) => t.fromUser?.name },
     { title: "To", render: (_: unknown, t: Transfer) => t.toUser?.name },
-    { title: "Status", dataIndex: "status" },
+    {
+      title: "Status",
+      render: (_: unknown, t: Transfer) => <StatusBadge status={t.status} />,
+    },
     {
       title: "",
       width: 110,
@@ -258,6 +266,7 @@ export default function AllocationTransfer() {
         <Table
           rowKey="id"
           size="small"
+          loading={allocationsLoading}
           columns={columns}
           dataSource={allocations}
           pagination={{ pageSize: 8 }}
@@ -268,6 +277,7 @@ export default function AllocationTransfer() {
         <Table
           rowKey="id"
           size="small"
+          loading={transfersLoading}
           columns={transferColumns}
           dataSource={transfers}
           pagination={{ pageSize: 8 }}

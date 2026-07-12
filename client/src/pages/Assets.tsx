@@ -5,6 +5,7 @@ import type { ColumnsType } from "antd/es/table";
 import { fetchAssets, type Asset, type AssetFilters } from "../api/assets";
 import { fetchCategories } from "../api/org";
 import StatusBadge from "../components/StatusBadge";
+import { toLabel } from "../lib/format";
 import RegisterAssetModal from "../components/RegisterAssetModal";
 import AssetDetailDrawer from "../components/AssetDetailDrawer";
 import { useAuth } from "../auth/AuthContext";
@@ -98,7 +99,7 @@ export default function Assets() {
           style={{ width: 190 }}
           options={STATUS_OPTIONS.map((s) => ({
             value: s,
-            label: s.replace(/_/g, " "),
+            label: toLabel(s),
           }))}
           onChange={(status) => setFilters((f) => ({ ...f, status }))}
         />

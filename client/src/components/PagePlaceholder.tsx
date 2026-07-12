@@ -10,7 +10,7 @@ export default function PagePlaceholder({
 }) {
   return (
     <div>
-      <Typography.Title level={3} style={{ marginTop: 0 }}>
+      <Typography.Title level={3} style={{ margin: 0, marginBottom: 16 }}>
         {title}
       </Typography.Title>
       <Card>

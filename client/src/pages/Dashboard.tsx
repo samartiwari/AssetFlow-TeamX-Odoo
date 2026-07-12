@@ -1,7 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { Row, Col, Card, Statistic, Typography, Table, Tag, Space } from "antd";
+import {
+  Row,
+  Col,
+  Card,
+  Statistic,
+  Typography,
+  Table,
+  Tag,
+  Space,
+  Button,
+  List,
+} from "antd";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 import { fetchDashboard, type DashboardData } from "../api/dashboard";
+import { toLabel } from "../lib/format";
 
 const KPI_CARDS: { key: keyof DashboardData["kpis"]; label: string }[] = [
   { key: "available", label: "Assets Available" },
@@ -13,18 +26,34 @@ const KPI_CARDS: { key: keyof DashboardData["kpis"]; label: string }[] = [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboard,
   });
 
   const overdue = data?.overdue ?? [];
+  const activity = data?.recentActivity ?? [];
 
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
-      <Typography.Title level={3} style={{ margin: 0 }}>
-        Dashboard
-      </Typography.Title>
+      <Space
+        style={{ width: "100%", justifyContent: "space-between" }}
+        wrap
+      >
+        <Typography.Title level={3} style={{ margin: 0 }}>
+          Dashboard
+        </Typography.Title>
+        <Space wrap>
+          <Button type="primary" onClick={() => navigate("/assets")}>
+            Register Asset
+          </Button>
+          <Button onClick={() => navigate("/booking")}>Book Resource</Button>
+          <Button onClick={() => navigate("/maintenance")}>
+            Raise Maintenance
+          </Button>
+        </Space>
+      </Space>
 
       <Row gutter={[16, 16]}>
         {KPI_CARDS.map((c) => (
@@ -71,6 +100,28 @@ export default function Dashboard() {
               ),
             },
           ]}
+        />
+      </Card>
+
+      <Card title="Recent Activity">
+        <List
+          size="small"
+          loading={isLoading}
+          dataSource={activity}
+          locale={{ emptyText: "No recent activity yet." }}
+          renderItem={(a) => (
+            <List.Item>
+              <Space>
+                <Tag>{toLabel(a.action)}</Tag>
+                <Typography.Text>
+                  {a.user?.name ?? "Someone"} · {a.entityType}
+                </Typography.Text>
+              </Space>
+              <Typography.Text type="secondary">
+                {dayjs(a.createdAt).format("DD MMM, HH:mm")}
+              </Typography.Text>
+            </List.Item>
+          )}
         />
       </Card>
     </Space>

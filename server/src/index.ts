@@ -9,6 +9,7 @@ import categoryRoutes from "./routes/categories.js";
 import userRoutes from "./routes/users.js";
 import allocationRoutes from "./routes/allocations.js";
 import transferRoutes from "./routes/transfers.js";
+import notificationRoutes from "./routes/notifications.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {

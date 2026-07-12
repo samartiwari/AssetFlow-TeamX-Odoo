@@ -8,11 +8,14 @@ import {
   Typography,
   Grid,
   Drawer,
+  Badge,
 } from "antd";
+import { useQuery } from "@tanstack/react-query";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useThemeMode } from "../theme/ThemeProvider";
 import { brand } from "../theme/tokens";
 import { useAuth, type Role } from "../auth/AuthContext";
+import { fetchNotifications } from "../api/notifications";
 
 const { Header, Sider, Content } = Layout;
 
@@ -41,6 +44,15 @@ export default function AppLayout() {
   const { mode, toggle } = useThemeMode();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Poll the unread count so the bell badge stays roughly current.
+  const { data: notifData } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => fetchNotifications(),
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+  const unread = notifData?.unread ?? 0;
   const location = useLocation();
   const screens = Grid.useBreakpoint();
 
@@ -147,6 +159,17 @@ export default function AppLayout() {
           )}
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Badge count={unread} size="small" offset={[-2, 4]}>
+            <Button
+              type="text"
+              onClick={() => navigate("/notifications")}
+              aria-label="Notifications"
+              title="Notifications"
+            >
+              🔔
+            </Button>
+          </Badge>
+
           <Button
             type="text"
             onClick={toggle}

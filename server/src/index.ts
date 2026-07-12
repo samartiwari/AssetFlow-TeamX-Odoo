@@ -13,6 +13,7 @@ import allocationRoutes from "./routes/allocations.js";
 import transferRoutes from "./routes/transfers.js";
 import notificationRoutes from "./routes/notifications.js";
 import activityLogRoutes from "./routes/activityLogs.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/activity-logs", activityLogRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {

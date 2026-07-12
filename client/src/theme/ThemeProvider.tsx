@@ -48,6 +48,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       },
+      components: {
+        // AntD's Layout Header/Sider default to a navy background that ignores the
+        // algorithm; pin them to our surface tokens so both themes render correctly.
+        Layout: {
+          headerBg: brand[mode].colorBgContainer,
+          siderBg: brand[mode].colorBgContainer,
+          triggerBg: brand[mode].colorBgContainer,
+          triggerColor: brand[mode].colorText,
+          bodyBg: brand[mode].colorBgLayout,
+        },
+        Menu: {
+          itemSelectedColor: brand[mode].colorPrimary,
+          itemSelectedBg:
+            mode === "dark"
+              ? "rgba(159, 117, 255, 0.16)"
+              : "rgba(124, 58, 237, 0.10)",
+        },
+      },
     }),
     [mode]
   );

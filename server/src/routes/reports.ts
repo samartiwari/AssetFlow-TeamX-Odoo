@@ -85,4 +85,67 @@ router.get(
   }
 );
 
+// Maintenance analytics: how often each category breaks, which assets have an
+// open maintenance request right now, and which assets are oldest (nearing
+// retirement). Manager/admin only.
+router.get(
+  "/maintenance",
+  requireAuth,
+  requireRole("ADMIN", "ASSET_MANAGER", "DEPT_HEAD"),
+  async (_req, res) => {
+    // Maintenance frequency grouped by the asset's category.
+    const requests = await prisma.maintenanceRequest.findMany({
+      select: { asset: { select: { category: { select: { name: true } } } } },
+    });
+    const catCounts = new Map<string, number>();
+    for (const r of requests) {
+      const name = r.asset.category.name;
+      catCounts.set(name, (catCounts.get(name) ?? 0) + 1);
+    }
+    const maintenanceFrequency = [...catCounts.entries()]
+      .map(([category, count]) => ({ category, count }))
+      .sort((x, y) => y.count - x.count);
+
+    // Assets with an open maintenance request (needing attention now).
+    const openReqs = await prisma.maintenanceRequest.findMany({
+      where: {
+        status: { in: ["PENDING", "APPROVED", "TECH_ASSIGNED", "IN_PROGRESS"] },
+      },
+      select: {
+        status: true,
+        priority: true,
+        asset: { select: { assetTag: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+    const dueForMaintenance = openReqs.map((r) => ({
+      assetTag: r.asset.assetTag,
+      name: r.asset.name,
+      status: r.status,
+      priority: r.priority,
+    }));
+
+    // Oldest active assets (nearing retirement), by acquisition age.
+    const assets = await prisma.asset.findMany({
+      where: { status: { notIn: ["RETIRED", "DISPOSED"] } },
+      select: { assetTag: true, name: true, acquisitionDate: true },
+    });
+    const now = Date.now();
+    const nearingRetirement = assets
+      .map((a) => ({
+        assetTag: a.assetTag,
+        name: a.name,
+        ageYears:
+          Math.round(
+            ((now - a.acquisitionDate.getTime()) / (365.25 * 86_400_000)) * 10
+          ) / 10,
+      }))
+      .sort((x, y) => y.ageYears - x.ageYears)
+      .slice(0, 10);
+
+    return ok(res, { maintenanceFrequency, dueForMaintenance, nearingRetirement });
+  }
+);
+
 export default router;

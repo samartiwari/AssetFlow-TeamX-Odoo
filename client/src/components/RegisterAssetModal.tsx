@@ -12,6 +12,7 @@ import {
 import dayjs, { type Dayjs } from "dayjs";
 import { createAsset } from "../api/assets";
 import { fetchCategories } from "../api/org";
+import { errorMessage } from "../lib/format";
 
 type FormValues = {
   name: string;
@@ -48,7 +49,8 @@ export default function RegisterAssetModal({
       form.resetFields();
       onClose();
     },
-    onError: () => message.error("Could not register the asset"),
+    onError: (err) =>
+      message.error(errorMessage(err, "Could not register the asset")),
   });
 
   function handleOk() {
@@ -74,7 +76,7 @@ export default function RegisterAssetModal({
       onCancel={onClose}
       confirmLoading={mutation.isPending}
       okText="Register"
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

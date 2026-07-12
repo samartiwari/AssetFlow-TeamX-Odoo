@@ -6,7 +6,7 @@ import DirectoryTab from "../components/orgSetup/DirectoryTab";
 export default function OrganizationSetup() {
   return (
     <div>
-      <Typography.Title level={3} style={{ marginTop: 0 }}>
+      <Typography.Title level={3} style={{ margin: 0, marginBottom: 16 }}>
         Organization Setup
       </Typography.Title>
       <Card>

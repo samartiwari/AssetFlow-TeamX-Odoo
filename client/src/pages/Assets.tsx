@@ -9,6 +9,7 @@ import {
   type AssetFilters,
 } from "../api/assets";
 import StatusBadge from "../components/StatusBadge";
+import RegisterAssetModal from "../components/RegisterAssetModal";
 import { useAuth } from "../auth/AuthContext";
 
 const STATUS_OPTIONS = [
@@ -26,6 +27,7 @@ export default function Assets() {
   const canRegister = user?.role === "ASSET_MANAGER" || user?.role === "ADMIN";
 
   const [filters, setFilters] = useState<AssetFilters>({});
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -71,7 +73,11 @@ export default function Assets() {
         <Typography.Title level={3} style={{ margin: 0 }}>
           Assets
         </Typography.Title>
-        {canRegister && <Button type="primary">Register Asset</Button>}
+        {canRegister && (
+          <Button type="primary" onClick={() => setRegisterOpen(true)}>
+            Register Asset
+          </Button>
+        )}
       </Space>
 
       <Space style={{ marginBottom: 16 }} wrap>
@@ -106,6 +112,11 @@ export default function Assets() {
         columns={columns}
         dataSource={assets}
         pagination={{ pageSize: 10, showSizeChanger: false }}
+      />
+
+      <RegisterAssetModal
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
       />
     </div>
   );

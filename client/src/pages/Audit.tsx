@@ -202,7 +202,7 @@ export default function Audit() {
                 title={
                   <Space wrap>
                     <span>{cycle.scope}</span>
-                    <Tag color={isOpen ? "blue" : "default"}>{cycle.status}</Tag>
+                    <StatusBadge status={cycle.status} />
                   </Space>
                 }
                 extra={
@@ -283,9 +283,7 @@ function CycleListItem({
         <Typography.Text strong ellipsis style={{ maxWidth: 180 }}>
           {cycle.scope}
         </Typography.Text>
-        <Tag color={cycle.status === "OPEN" ? "blue" : "default"}>
-          {cycle.status}
-        </Tag>
+        <StatusBadge status={cycle.status} />
       </div>
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
         {dateRange(cycle)}

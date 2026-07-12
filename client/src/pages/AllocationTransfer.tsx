@@ -19,16 +19,26 @@ import {
   allocateAsset,
   fetchAllocations,
   createTransfer,
+  returnAllocation,
+  fetchTransfers,
+  approveTransfer,
   type AllocationConflict,
   type Allocation,
+  type Transfer,
 } from "../api/allocations";
 import { fetchAssets } from "../api/assets";
 import { fetchUsers } from "../api/org";
+import { useAuth } from "../auth/AuthContext";
 
 export default function AllocationTransfer() {
   const [form] = Form.useForm();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canApprove =
+    user?.role === "ASSET_MANAGER" ||
+    user?.role === "DEPT_HEAD" ||
+    user?.role === "ADMIN";
 
   // Holds the conflict returned by a 409 so we can render the red banner and
   // offer a transfer instead of a second allocation.
@@ -47,6 +57,30 @@ export default function AllocationTransfer() {
   const { data: allocations = [] } = useQuery({
     queryKey: ["allocations", "open"],
     queryFn: () => fetchAllocations({ open: true }),
+  });
+  const { data: transfers = [] } = useQuery({
+    queryKey: ["transfers"],
+    queryFn: fetchTransfers,
+  });
+
+  const doReturn = useMutation({
+    mutationFn: (id: string) => returnAllocation(id),
+    onSuccess: () => {
+      message.success("Asset returned");
+      queryClient.invalidateQueries({ queryKey: ["allocations"] });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+    onError: () => message.error("Could not return the asset"),
+  });
+
+  const approve = useMutation({
+    mutationFn: approveTransfer,
+    onSuccess: () => {
+      message.success("Transfer approved and re-allocated");
+      queryClient.invalidateQueries({ queryKey: ["transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["allocations"] });
+    },
+    onError: () => message.error("Could not approve the transfer"),
   });
 
   const allocate = useMutation({
@@ -110,6 +144,46 @@ export default function AllocationTransfer() {
         a.expectedReturnDate
           ? dayjs(a.expectedReturnDate).format("DD MMM YYYY")
           : "—",
+    },
+    {
+      title: "",
+      width: 100,
+      render: (_: unknown, a: Allocation) =>
+        canApprove ? (
+          <Button
+            size="small"
+            onClick={() => doReturn.mutate(a.id)}
+            loading={doReturn.isPending}
+          >
+            Return
+          </Button>
+        ) : null,
+    },
+  ];
+
+  const transferColumns = [
+    {
+      title: "Asset",
+      render: (_: unknown, t: Transfer) =>
+        `${t.asset?.assetTag ?? ""} ${t.asset?.name ?? ""}`,
+    },
+    { title: "From", render: (_: unknown, t: Transfer) => t.fromUser?.name },
+    { title: "To", render: (_: unknown, t: Transfer) => t.toUser?.name },
+    { title: "Status", dataIndex: "status" },
+    {
+      title: "",
+      width: 110,
+      render: (_: unknown, t: Transfer) =>
+        canApprove && t.status === "REQUESTED" ? (
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => approve.mutate(t.id)}
+            loading={approve.isPending}
+          >
+            Approve
+          </Button>
+        ) : null,
     },
   ];
 
@@ -186,6 +260,16 @@ export default function AllocationTransfer() {
           size="small"
           columns={columns}
           dataSource={allocations}
+          pagination={{ pageSize: 8 }}
+        />
+      </Card>
+
+      <Card title="Transfer requests">
+        <Table
+          rowKey="id"
+          size="small"
+          columns={transferColumns}
+          dataSource={transfers}
           pagination={{ pageSize: 8 }}
         />
       </Card>

@@ -51,3 +51,49 @@ export async function fetchUsers(): Promise<DirectoryUser[]> {
   const res = await api.get("/api/users");
   return res.data.data;
 }
+
+export type Category = {
+  id: string;
+  name: string;
+  customFields: Record<string, unknown> | null;
+  _count?: { assets: number };
+};
+
+export type CategoryInput = {
+  name: string;
+  customFields?: Record<string, unknown> | null;
+};
+
+export async function fetchCategories(): Promise<Category[]> {
+  const res = await api.get("/api/categories");
+  return res.data.data;
+}
+
+export async function createCategory(input: CategoryInput): Promise<Category> {
+  const res = await api.post("/api/categories", input);
+  return res.data.data;
+}
+
+export async function updateCategory(
+  id: string,
+  input: Partial<CategoryInput>
+): Promise<Category> {
+  const res = await api.patch(`/api/categories/${id}`, input);
+  return res.data.data;
+}
+
+export async function updateUserRole(
+  id: string,
+  role: string
+): Promise<DirectoryUser> {
+  const res = await api.patch(`/api/users/${id}/role`, { role });
+  return res.data.data;
+}
+
+export async function updateUser(
+  id: string,
+  input: { status?: string; departmentId?: string | null; name?: string }
+): Promise<DirectoryUser> {
+  const res = await api.patch(`/api/users/${id}`, input);
+  return res.data.data;
+}

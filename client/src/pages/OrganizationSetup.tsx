@@ -1,5 +1,7 @@
 import { Card, Tabs, Typography } from "antd";
 import DepartmentsTab from "../components/orgSetup/DepartmentsTab";
+import CategoriesTab from "../components/orgSetup/CategoriesTab";
+import DirectoryTab from "../components/orgSetup/DirectoryTab";
 
 export default function OrganizationSetup() {
   return (
@@ -18,20 +20,12 @@ export default function OrganizationSetup() {
             {
               key: "categories",
               label: "Categories",
-              children: (
-                <Typography.Paragraph type="secondary">
-                  Category management — coming next.
-                </Typography.Paragraph>
-              ),
+              children: <CategoriesTab />,
             },
             {
               key: "directory",
               label: "Employee Directory",
-              children: (
-                <Typography.Paragraph type="secondary">
-                  Employee directory — coming next.
-                </Typography.Paragraph>
-              ),
+              children: <DirectoryTab />,
             },
           ]}
         />

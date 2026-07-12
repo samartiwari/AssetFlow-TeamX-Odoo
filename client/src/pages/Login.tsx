@@ -46,7 +46,14 @@ export default function Login() {
     >
       <Card style={{ width: 380 }}>
         <div style={{ textAlign: "center", marginBottom: 16 }}>
-          <Avatar size={56} style={{ marginBottom: 12 }}>
+          <Avatar
+            size={56}
+            style={{
+              marginBottom: 12,
+              backgroundColor: "#7C3AED",
+              fontWeight: 700,
+            }}
+          >
             AF
           </Avatar>
           <Typography.Title level={4} style={{ margin: 0 }}>

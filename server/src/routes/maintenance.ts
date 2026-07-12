@@ -8,6 +8,7 @@ import {
   transitionAsset,
   IllegalTransitionError,
 } from "../lib/assetLifecycle.js";
+import { notify, logActivity } from "../lib/audit.js";
 import type { MaintenanceStatus } from "../../generated/prisma/enums.js";
 
 const router = Router();
@@ -141,7 +142,7 @@ router.patch(
     if (!MAINT_TRANSITIONS[request.status].includes(target)) {
       return fail(
         res,
-        400,
+        409,
         `Cannot move a request from ${request.status} to ${target}`
       );
     }
@@ -169,21 +170,19 @@ router.patch(
           data: updateData,
           include: withRelations,
         });
-        await tx.notification.create({
-          data: {
-            userId: request.raisedById,
-            type: notif.type,
-            message: `Maintenance for ${tag} was ${notif.verb}`,
-          },
-        });
-        await tx.activityLog.create({
-          data: {
-            userId: req.user!.sub,
-            action: `MAINTENANCE_${target}`,
-            entityType: "MaintenanceRequest",
-            entityId: id,
-          },
-        });
+        await notify(
+          tx,
+          request.raisedById,
+          notif.type,
+          `Maintenance for ${tag} was ${notif.verb}`
+        );
+        await logActivity(
+          tx,
+          req.user!.sub,
+          `MAINTENANCE_${target}`,
+          "MaintenanceRequest",
+          id
+        );
         return result;
       });
       return ok(res, updated);

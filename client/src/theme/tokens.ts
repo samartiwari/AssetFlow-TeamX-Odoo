@@ -56,6 +56,9 @@ export const statusColors: Record<ThemeMode, Record<string, string>> = {
     // record status
     ACTIVE: "#0CA30C",
     INACTIVE: "#8A8A85",
+    // audit cycle status
+    OPEN: "#256ABF",
+    CLOSED: "#8A8A85",
     // maintenance workflow
     PENDING: "#EDA100",
     APPROVED: "#0CA30C",
@@ -86,6 +89,8 @@ export const statusColors: Record<ThemeMode, Record<string, string>> = {
     DISPOSED: "#6E6E68",
     ACTIVE: "#3DD35D",
     INACTIVE: "#9A9A94",
+    OPEN: "#4C93E8",
+    CLOSED: "#9A9A94",
     PENDING: "#F5C044",
     APPROVED: "#3DD35D",
     REJECTED: "#F06565",

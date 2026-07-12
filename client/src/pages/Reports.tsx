@@ -1,26 +1,39 @@
-import { Card, Col, Row, Spin, Typography } from "antd";
+import { Card, Col, List, Row, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { fetchUtilization } from "../api/reports";
-import { useThemeMode } from "../theme/ThemeProvider";
-import { chartColors } from "../theme/chartColors";
+  fetchBookingHeatmap,
+  fetchMaintenanceReport,
+  fetchUtilization,
+} from "../api/reports";
+import SimpleBarChart from "../components/reports/SimpleBarChart";
+import BookingHeatmapGrid from "../components/reports/BookingHeatmapGrid";
+import StatusBadge from "../components/StatusBadge";
+
+function rowBetween(left: React.ReactNode, right: React.ReactNode) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 8 }}>
+      {left}
+      {right}
+    </div>
+  );
+}
 
 export default function Reports() {
-  const { mode } = useThemeMode();
-  const c = chartColors(mode);
-
-  const { data: util, isLoading } = useQuery({
+  const utilQ = useQuery({
     queryKey: ["reports", "utilization"],
     queryFn: fetchUtilization,
   });
+  const maintQ = useQuery({
+    queryKey: ["reports", "maintenance"],
+    queryFn: fetchMaintenanceReport,
+  });
+  const heatQ = useQuery({
+    queryKey: ["reports", "heatmap"],
+    queryFn: fetchBookingHeatmap,
+  });
+
+  const util = utilQ.data;
+  const maint = maintQ.data;
 
   return (
     <div>
@@ -28,59 +41,107 @@ export default function Reports() {
         Reports & Analytics
       </Typography.Title>
 
-      {isLoading ? (
-        <div style={{ textAlign: "center", padding: 48 }}>
-          <Spin />
-        </div>
-      ) : (
-        <Row gutter={[16, 16]}>
-          <Col xs={24} lg={12}>
-            <Card title="Utilization by department">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  data={util?.byDepartment ?? []}
-                  margin={{ top: 8, right: 8, bottom: 8, left: -12 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke={c.grid}
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="department"
-                    tick={{ fontSize: 12, fill: c.axis }}
-                    tickLine={false}
-                    axisLine={{ stroke: c.grid }}
-                  />
-                  <YAxis
-                    allowDecimals={false}
-                    tick={{ fontSize: 12, fill: c.axis }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={40}
-                  />
-                  <Tooltip
-                    cursor={{ fill: c.grid, opacity: 0.3 }}
-                    contentStyle={{
-                      background: c.surface,
-                      border: `1px solid ${c.grid}`,
-                      borderRadius: 8,
-                      color: c.text,
-                    }}
-                    labelStyle={{ color: c.text }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill={c.bar}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={48}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-          </Col>
-        </Row>
-      )}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <Card title="Utilization by department" loading={utilQ.isLoading}>
+            <SimpleBarChart
+              data={util?.byDepartment ?? []}
+              xKey="department"
+              barKey="count"
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card
+            title="Maintenance frequency by category"
+            loading={maintQ.isLoading}
+          >
+            <SimpleBarChart
+              data={maint?.maintenanceFrequency ?? []}
+              xKey="category"
+              barKey="count"
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card title="Most-used assets" loading={utilQ.isLoading}>
+            <List
+              size="small"
+              locale={{ emptyText: "No data" }}
+              dataSource={util?.mostUsed ?? []}
+              renderItem={(a) =>
+                <List.Item>
+                  {rowBetween(
+                    <span><b>{a.assetTag}</b> · {a.name}</span>,
+                    <Typography.Text type="secondary">{a.uses} uses</Typography.Text>
+                  )}
+                </List.Item>
+              }
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card title="Idle assets" loading={utilQ.isLoading}>
+            <List
+              size="small"
+              locale={{ emptyText: "No idle assets" }}
+              dataSource={util?.idle ?? []}
+              renderItem={(a) =>
+                <List.Item>
+                  {rowBetween(
+                    <span><b>{a.assetTag}</b> · {a.name}</span>,
+                    <Typography.Text type="secondary">
+                      {a.daysIdle === null ? "never used" : `${a.daysIdle}d idle`}
+                    </Typography.Text>
+                  )}
+                </List.Item>
+              }
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card title="Due for maintenance" loading={maintQ.isLoading}>
+            <List
+              size="small"
+              locale={{ emptyText: "Nothing open" }}
+              dataSource={maint?.dueForMaintenance ?? []}
+              renderItem={(a) =>
+                <List.Item>
+                  {rowBetween(
+                    <span><b>{a.assetTag}</b> · {a.name}</span>,
+                    <StatusBadge status={a.status} />
+                  )}
+                </List.Item>
+              }
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card title="Nearing retirement" loading={maintQ.isLoading}>
+            <List
+              size="small"
+              locale={{ emptyText: "No data" }}
+              dataSource={maint?.nearingRetirement ?? []}
+              renderItem={(a) =>
+                <List.Item>
+                  {rowBetween(
+                    <span><b>{a.assetTag}</b> · {a.name}</span>,
+                    <Typography.Text type="secondary">{a.ageYears} yrs</Typography.Text>
+                  )}
+                </List.Item>
+              }
+            />
+          </Card>
+        </Col>
+
+        <Col xs={24}>
+          <Card title="Booking heatmap (peak usage windows)" loading={heatQ.isLoading}>
+            {heatQ.data && <BookingHeatmapGrid data={heatQ.data} />}
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 }

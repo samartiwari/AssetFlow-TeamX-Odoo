@@ -7,6 +7,34 @@ import { nextAssetTag } from "../lib/assetTag.js";
 
 const router = Router();
 
+// List assets with optional search and filters. `q` matches tag, name, or
+// serial number; the rest are exact-match filters. Everyone signed in can
+// browse the directory.
+router.get("/", requireAuth, async (req, res) => {
+  const { q, category, status, location } = req.query;
+
+  const where: Record<string, unknown> = {};
+  if (typeof q === "string" && q.trim()) {
+    const term = q.trim();
+    where.OR = [
+      { assetTag: { contains: term, mode: "insensitive" } },
+      { name: { contains: term, mode: "insensitive" } },
+      { serialNumber: { contains: term, mode: "insensitive" } },
+    ];
+  }
+  if (typeof category === "string" && category) where.categoryId = category;
+  if (typeof status === "string" && status) where.status = status;
+  if (typeof location === "string" && location) where.location = location;
+
+  const assets = await prisma.asset.findMany({
+    where,
+    include: { category: { select: { id: true, name: true } } },
+    orderBy: { assetTag: "asc" },
+  });
+
+  return ok(res, { assets });
+});
+
 // Register a new asset. Only asset managers and admins can add stock. The tag
 // is generated and the row inserted in one transaction so concurrent
 // registrations get distinct tags.

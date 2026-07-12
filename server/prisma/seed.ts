@@ -65,6 +65,97 @@ async function seedCategories() {
   return { electronics, furniture, vehicles, equipment };
 }
 
+type Departments = Awaited<ReturnType<typeof seedDepartments>>;
+
+async function seedUsers(depts: Departments) {
+  // Everyone shares a simple demo password except the admin, so the login flow
+  // is easy to show during judging.
+  const commonPassword = hash("password123");
+
+  const admin = await prisma.user.create({
+    data: {
+      name: "Admin User",
+      email: "admin@assetflow.com",
+      passwordHash: hash("admin123"),
+      role: "ADMIN",
+    },
+  });
+
+  const managers = await Promise.all([
+    prisma.user.create({
+      data: {
+        name: "Ravi Menon",
+        email: "manager1@assetflow.com",
+        passwordHash: commonPassword,
+        role: "ASSET_MANAGER",
+        departmentId: depts.it.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        name: "Neha Kapoor",
+        email: "manager2@assetflow.com",
+        passwordHash: commonPassword,
+        role: "ASSET_MANAGER",
+        departmentId: depts.facilities.id,
+      },
+    }),
+  ]);
+
+  const heads = await Promise.all([
+    prisma.user.create({
+      data: {
+        name: "Priya Shah",
+        email: "head1@assetflow.com",
+        passwordHash: commonPassword,
+        role: "DEPT_HEAD",
+        departmentId: depts.engineering.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        name: "Arjun Rao",
+        email: "head2@assetflow.com",
+        passwordHash: commonPassword,
+        role: "DEPT_HEAD",
+        departmentId: depts.sales.id,
+      },
+    }),
+  ]);
+
+  // Point each department at its head now that those users exist.
+  await prisma.department.update({
+    where: { id: depts.engineering.id },
+    data: { headId: heads[0].id },
+  });
+  await prisma.department.update({
+    where: { id: depts.sales.id },
+    data: { headId: heads[1].id },
+  });
+
+  const employeeDepts = [
+    depts.engineering,
+    depts.sales,
+    depts.facilities,
+    depts.it,
+  ];
+  const employees = await Promise.all(
+    Array.from({ length: 10 }, (_, i) =>
+      prisma.user.create({
+        data: {
+          name: `Employee ${i + 1}`,
+          email: `employee${i + 1}@assetflow.com`,
+          passwordHash: commonPassword,
+          role: "EMPLOYEE",
+          departmentId: employeeDepts[i % employeeDepts.length].id,
+        },
+      })
+    )
+  );
+
+  return { admin, managers, heads, employees };
+}
+
 async function main() {
   console.log("Wiping existing data...");
   await wipe();
@@ -74,6 +165,9 @@ async function main() {
 
   console.log("Seeding categories...");
   const categories = await seedCategories();
+
+  console.log("Seeding users...");
+  const users = await seedUsers(departments);
 
   console.log("Seed complete.");
 }

@@ -284,6 +284,109 @@ async function seedAssets(categories: Categories) {
   return assets;
 }
 
+type Users = Awaited<ReturnType<typeof seedUsers>>;
+type Assets = Awaited<ReturnType<typeof seedAssets>>;
+
+function daysFromNow(days: number) {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
+async function seedActivity(users: Users, assets: Assets) {
+  const allocated = assets.find((a) => a.status === "ALLOCATED")!;
+  const priya = users.heads[0]!;
+  const employee = users.employees[0]!;
+  const employee2 = users.employees[1]!;
+
+  // The allocated laptop is held by Priya — matches the double-allocation demo
+  // scenario from the problem statement. Open allocation (returnedAt = null).
+  await prisma.allocation.create({
+    data: {
+      assetId: allocated.id,
+      holderId: priya.id,
+      expectedReturnDate: daysFromNow(14),
+    },
+  });
+
+  // A couple more open allocations, one deliberately overdue so the dashboard
+  // has something to flag in red.
+  const available = assets.filter((a) => a.status === "AVAILABLE");
+  const overdueAsset = available[0]!;
+  const currentAsset = available[1]!;
+
+  await prisma.asset.update({
+    where: { id: overdueAsset.id },
+    data: { status: "ALLOCATED" },
+  });
+  await prisma.allocation.create({
+    data: {
+      assetId: overdueAsset.id,
+      holderId: employee.id,
+      expectedReturnDate: daysFromNow(-3), // overdue
+    },
+  });
+
+  await prisma.asset.update({
+    where: { id: currentAsset.id },
+    data: { status: "ALLOCATED" },
+  });
+  await prisma.allocation.create({
+    data: {
+      assetId: currentAsset.id,
+      holderId: employee2.id,
+      expectedReturnDate: daysFromNow(7),
+    },
+  });
+
+  // Bookings on a bookable resource, spaced so overlaps can be demoed against
+  // real existing data.
+  const room = assets.find((a) => a.isBookable && a.name.startsWith("Meeting"))!;
+  await prisma.booking.create({
+    data: {
+      resourceId: room.id,
+      bookedById: employee.id,
+      startTime: daysFromNow(1),
+      endTime: new Date(daysFromNow(1).getTime() + 60 * 60 * 1000),
+      status: "UPCOMING",
+    },
+  });
+  await prisma.booking.create({
+    data: {
+      resourceId: room.id,
+      bookedById: users.employees[2]!.id,
+      startTime: daysFromNow(2),
+      endTime: new Date(daysFromNow(2).getTime() + 90 * 60 * 1000),
+      status: "UPCOMING",
+    },
+  });
+
+  // Maintenance mid-workflow: one pending approval, one already approved (the
+  // asset seeded as UNDER_MAINTENANCE).
+  const underMaintenance = assets.find(
+    (a) => a.status === "UNDER_MAINTENANCE"
+  )!;
+  await prisma.maintenanceRequest.create({
+    data: {
+      assetId: underMaintenance.id,
+      raisedById: employee.id,
+      description: "Engine warning light on, needs inspection.",
+      priority: "HIGH",
+      status: "APPROVED",
+      technicianId: users.managers[0]!.id,
+    },
+  });
+
+  const pendingAsset = available[2]!;
+  await prisma.maintenanceRequest.create({
+    data: {
+      assetId: pendingAsset.id,
+      raisedById: employee2.id,
+      description: "Screen flickers intermittently.",
+      priority: "MEDIUM",
+      status: "PENDING",
+    },
+  });
+}
+
 async function main() {
   console.log("Wiping existing data...");
   await wipe();
@@ -299,6 +402,9 @@ async function main() {
 
   console.log("Seeding assets...");
   const assets = await seedAssets(categories);
+
+  console.log("Seeding allocations, bookings, and maintenance...");
+  await seedActivity(users, assets);
 
   console.log("Seed complete.");
 }

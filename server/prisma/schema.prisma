@@ -76,11 +76,16 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  department        Department?       @relation("DepartmentMembers", fields: [departmentId], references: [id])
-  headedDepartments Department[]      @relation("DepartmentHead")
+  department        Department?          @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  headedDepartments Department[]         @relation("DepartmentHead")
   allocations       Allocation[]
-  transfersFrom     TransferRequest[] @relation("TransferFrom")
-  transfersTo       TransferRequest[] @relation("TransferTo")
+  transfersFrom     TransferRequest[]    @relation("TransferFrom")
+  transfersTo       TransferRequest[]    @relation("TransferTo")
+  bookings          Booking[]
+  maintenanceRaised MaintenanceRequest[] @relation("MaintenanceRaisedBy")
+  maintenanceJobs   MaintenanceRequest[] @relation("MaintenanceTechnician")
+  notifications     Notification[]
+  activityLogs      ActivityLog[]
 }
 
 model Department {
@@ -128,9 +133,12 @@ model Asset {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  category         Category          @relation(fields: [categoryId], references: [id])
+  category         Category             @relation(fields: [categoryId], references: [id])
   allocations      Allocation[]
   transferRequests TransferRequest[]
+  bookings         Booking[]
+  maintenance      MaintenanceRequest[]
+  auditItems       AuditItem[]
 }
 
 // ---------------------------------------------------------------------------
@@ -163,4 +171,92 @@ model TransferRequest {
   asset    Asset @relation(fields: [assetId], references: [id])
   fromUser User  @relation("TransferFrom", fields: [fromUserId], references: [id])
   toUser   User  @relation("TransferTo", fields: [toUserId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Booking & maintenance
+// ---------------------------------------------------------------------------
+
+model Booking {
+  id         String        @id @default(cuid())
+  resourceId String
+  bookedById String
+  startTime  DateTime
+  endTime    DateTime
+  status     BookingStatus @default(UPCOMING)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  resource Asset @relation(fields: [resourceId], references: [id])
+  bookedBy User  @relation(fields: [bookedById], references: [id])
+}
+
+model MaintenanceRequest {
+  id           String            @id @default(cuid())
+  assetId      String
+  raisedById   String
+  description  String
+  priority     String
+  status       MaintenanceStatus @default(PENDING)
+  technicianId String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  asset      Asset @relation(fields: [assetId], references: [id])
+  raisedBy   User  @relation("MaintenanceRaisedBy", fields: [raisedById], references: [id])
+  technician User? @relation("MaintenanceTechnician", fields: [technicianId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditCycle {
+  id         String   @id @default(cuid())
+  scope      String
+  startDate  DateTime
+  endDate    DateTime
+  status     String   @default("OPEN")
+  auditorIds String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  items AuditItem[]
+}
+
+model AuditItem {
+  id        String        @id @default(cuid())
+  cycleId   String
+  assetId   String
+  verdict   AuditVerdict?
+  createdAt DateTime      @default(now())
+
+  cycle AuditCycle @relation(fields: [cycleId], references: [id])
+  asset Asset      @relation(fields: [assetId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications & activity log
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

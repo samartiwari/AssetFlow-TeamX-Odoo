@@ -5,6 +5,7 @@ import { ok } from "./lib/http.js";
 import authRoutes from "./routes/auth.js";
 import departmentRoutes from "./routes/departments.js";
 import categoryRoutes from "./routes/categories.js";
+import userRoutes from "./routes/users.js";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/users", userRoutes);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {

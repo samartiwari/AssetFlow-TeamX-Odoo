@@ -156,6 +156,134 @@ async function seedUsers(depts: Departments) {
   return { admin, managers, heads, employees };
 }
 
+type Categories = Awaited<ReturnType<typeof seedCategories>>;
+
+function tag(n: number) {
+  return `AF-${String(n).padStart(4, "0")}`;
+}
+
+async function seedAssets(categories: Categories) {
+  const conditions = ["Excellent", "Good", "Fair"];
+  const locations = ["HQ Floor 1", "HQ Floor 2", "Warehouse", "Remote"];
+
+  // A spread of names per category, plus a status distribution that leaves
+  // most assets Available (so allocation/booking demos have stock) while still
+  // showing every lifecycle state on the board.
+  const specs: {
+    name: string;
+    categoryId: string;
+    status: string;
+    bookable?: boolean;
+  }[] = [];
+
+  const laptops = ["Dell Latitude", "MacBook Pro", "ThinkPad X1", "HP EliteBook"];
+  laptops.forEach((name, i) =>
+    specs.push({
+      name: `${name} ${i + 1}`,
+      categoryId: categories.electronics.id,
+      status: i === 0 ? "ALLOCATED" : "AVAILABLE",
+    })
+  );
+
+  const monitors = ["Dell UltraSharp", "LG 27\"", "Samsung Curved"];
+  monitors.forEach((name, i) =>
+    specs.push({
+      name: `${name} Monitor ${i + 1}`,
+      categoryId: categories.electronics.id,
+      status: "AVAILABLE",
+    })
+  );
+
+  const projectors = ["Epson Projector", "BenQ Projector"];
+  projectors.forEach((name) =>
+    specs.push({
+      name,
+      categoryId: categories.electronics.id,
+      status: "AVAILABLE",
+      bookable: true,
+    })
+  );
+
+  const desks = ["Standing Desk", "Office Desk", "Conference Table"];
+  desks.forEach((name, i) =>
+    specs.push({
+      name: `${name} ${i + 1}`,
+      categoryId: categories.furniture.id,
+      status: "AVAILABLE",
+    })
+  );
+
+  const chairs = ["Ergonomic Chair", "Task Chair", "Executive Chair"];
+  chairs.forEach((name, i) =>
+    specs.push({
+      name: `${name} ${i + 1}`,
+      categoryId: categories.furniture.id,
+      status: i === 0 ? "RETIRED" : "AVAILABLE",
+    })
+  );
+
+  const rooms = ["Meeting Room A", "Meeting Room B", "Conference Hall"];
+  rooms.forEach((name) =>
+    specs.push({
+      name,
+      categoryId: categories.furniture.id,
+      status: "AVAILABLE",
+      bookable: true,
+    })
+  );
+
+  const vehicles = ["Company Van", "Delivery Truck", "Pool Car"];
+  vehicles.forEach((name, i) =>
+    specs.push({
+      name,
+      categoryId: categories.vehicles.id,
+      status: i === 0 ? "UNDER_MAINTENANCE" : "AVAILABLE",
+      bookable: true,
+    })
+  );
+
+  const equipment = [
+    "Cordless Drill",
+    "Ladder",
+    "Generator",
+    "Pressure Washer",
+    "Toolkit",
+    "Welding Machine",
+    "Air Compressor",
+    "Circular Saw",
+  ];
+  equipment.forEach((name, i) =>
+    specs.push({
+      name,
+      categoryId: categories.equipment.id,
+      status: i === 0 ? "LOST" : i === 1 ? "DISPOSED" : "AVAILABLE",
+    })
+  );
+
+  const assets = [];
+  for (let i = 0; i < specs.length; i++) {
+    const s = specs[i]!;
+    assets.push(
+      await prisma.asset.create({
+        data: {
+          assetTag: tag(i + 1),
+          name: s.name,
+          categoryId: s.categoryId,
+          serialNumber: `SN-${1000 + i}`,
+          acquisitionDate: new Date(2023, i % 12, ((i * 7) % 27) + 1),
+          cost: 5000 + ((i * 1234) % 45000),
+          condition: conditions[i % conditions.length]!,
+          location: locations[i % locations.length]!,
+          status: s.status as never,
+          isBookable: s.bookable ?? false,
+        },
+      })
+    );
+  }
+
+  return assets;
+}
+
 async function main() {
   console.log("Wiping existing data...");
   await wipe();
@@ -168,6 +296,9 @@ async function main() {
 
   console.log("Seeding users...");
   const users = await seedUsers(departments);
+
+  console.log("Seeding assets...");
+  const assets = await seedAssets(categories);
 
   console.log("Seed complete.");
 }

@@ -10,7 +10,8 @@ import {
   App,
 } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
-import { createAsset, fetchCategories } from "../api/assets";
+import { createAsset } from "../api/assets";
+import { fetchCategories } from "../api/org";
 
 type FormValues = {
   name: string;

@@ -38,8 +38,11 @@ router.get("/", requireAuth, async (req, res) => {
 // Full detail for one asset, including its allocation and maintenance history
 // (newest first) so the detail view can show both timelines.
 router.get("/:id", requireAuth, async (req, res) => {
+  const id = String(req.params.id ?? "");
+  if (!id) return fail(res, 400, "Missing asset id");
+
   const asset = await prisma.asset.findUnique({
-    where: { id: req.params.id },
+    where: { id },
     include: {
       category: { select: { id: true, name: true } },
       allocations: {
@@ -82,10 +85,11 @@ router.post(
       return fail(res, 400, "Category not found");
     }
 
+    const { photoUrl, ...rest } = parsed.data;
     const asset = await prisma.$transaction(async (tx) => {
       const assetTag = await nextAssetTag(tx);
       return tx.asset.create({
-        data: { ...parsed.data, assetTag },
+        data: { ...rest, assetTag, photoUrl: photoUrl ?? null },
       });
     });
 

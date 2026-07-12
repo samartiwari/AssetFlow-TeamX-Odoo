@@ -2,12 +2,8 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Table, Input, Select, Space, Typography, Button } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import {
-  fetchAssets,
-  fetchCategories,
-  type Asset,
-  type AssetFilters,
-} from "../api/assets";
+import { fetchAssets, type Asset, type AssetFilters } from "../api/assets";
+import { fetchCategories } from "../api/org";
 import StatusBadge from "../components/StatusBadge";
 import RegisterAssetModal from "../components/RegisterAssetModal";
 import AssetDetailDrawer from "../components/AssetDetailDrawer";

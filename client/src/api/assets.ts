@@ -25,8 +25,6 @@ export type Asset = {
   photoUrl?: string | null;
 };
 
-export type Category = { id: string; name: string };
-
 export type AssetFilters = {
   q?: string;
   category?: string;
@@ -42,11 +40,6 @@ export async function fetchAssets(filters: AssetFilters = {}): Promise<Asset[]> 
 export async function fetchAsset(id: string) {
   const { data } = await api.get(`/api/assets/${id}`);
   return data.data.asset;
-}
-
-export async function fetchCategories(): Promise<Category[]> {
-  const { data } = await api.get("/api/categories");
-  return data.data.categories;
 }
 
 export type CreateAssetInput = {

@@ -101,4 +101,29 @@ model Category {
   customFields Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  assets Asset[]
+}
+
+// ---------------------------------------------------------------------------
+// Assets
+// ---------------------------------------------------------------------------
+
+model Asset {
+  id              String      @id @default(cuid())
+  assetTag        String      @unique
+  name            String
+  categoryId      String
+  serialNumber    String
+  acquisitionDate DateTime
+  cost            Float
+  condition       String
+  location        String
+  status          AssetStatus @default(AVAILABLE)
+  isBookable      Boolean     @default(false)
+  photoUrl        String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
 }

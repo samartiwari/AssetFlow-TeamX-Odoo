@@ -2,7 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { ok, fail } from "../lib/http.js";
 import { requireAuth } from "../middleware/auth.js";
-import { notify, logActivity } from "../lib/events.js";
+import { notify, logActivity } from "../lib/audit.js";
 import {
   createBookingSchema,
   rescheduleBookingSchema,
@@ -92,17 +92,13 @@ router.post("/", requireAuth, async (req, res) => {
         include: bookingInclude,
       });
 
-      await notify(tx, {
+      await notify(
+        tx,
         userId,
-        type: "BOOKING_CONFIRMED",
-        message: `Booking confirmed for ${resource.name}`,
-      });
-      await logActivity(tx, {
-        userId,
-        action: "BOOKING_CREATED",
-        entityType: "Booking",
-        entityId: created.id,
-      });
+        "BOOKING_CONFIRMED",
+        `Booking confirmed for ${resource.name}`
+      );
+      await logActivity(tx, userId, "BOOKING_CREATED", "Booking", created.id);
 
       return created;
     });
@@ -142,17 +138,13 @@ router.patch("/:id/cancel", requireAuth, async (req, res) => {
       data: { status: "CANCELLED" },
       include: bookingInclude,
     });
-    await notify(tx, {
-      userId: booking.bookedById,
-      type: "BOOKING_CANCELLED",
-      message: `Booking cancelled for ${b.resource.name}`,
-    });
-    await logActivity(tx, {
-      userId,
-      action: "BOOKING_CANCELLED",
-      entityType: "Booking",
-      entityId: id,
-    });
+    await notify(
+      tx,
+      booking.bookedById,
+      "BOOKING_CANCELLED",
+      `Booking cancelled for ${b.resource.name}`
+    );
+    await logActivity(tx, userId, "BOOKING_CANCELLED", "Booking", id);
     return b;
   });
 
@@ -207,12 +199,7 @@ router.patch("/:id/reschedule", requireAuth, async (req, res) => {
         data: { startTime, endTime },
         include: bookingInclude,
       });
-      await logActivity(tx, {
-        userId,
-        action: "BOOKING_RESCHEDULED",
-        entityType: "Booking",
-        entityId: id,
-      });
+      await logActivity(tx, userId, "BOOKING_RESCHEDULED", "Booking", id);
       return updated;
     });
 

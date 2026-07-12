@@ -8,8 +8,11 @@ import departmentRoutes from "./routes/departments.js";
 import categoryRoutes from "./routes/categories.js";
 import userRoutes from "./routes/users.js";
 import bookingRoutes from "./routes/bookings.js";
+import maintenanceRoutes from "./routes/maintenance.js";
 import allocationRoutes from "./routes/allocations.js";
 import transferRoutes from "./routes/transfers.js";
+import notificationRoutes from "./routes/notifications.js";
+import activityLogRoutes from "./routes/activityLogs.js";
 
 const app = express();
 
@@ -30,8 +33,11 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/activity-logs", activityLogRoutes);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {

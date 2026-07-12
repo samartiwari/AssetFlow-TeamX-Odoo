@@ -11,6 +11,9 @@ import {
 } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useThemeMode } from "../theme/ThemeProvider";
+import { brand } from "../theme/tokens";
+import { errorMessage } from "../lib/format";
 
 type LoginValues = { email: string; password: string };
 
@@ -18,6 +21,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { message } = App.useApp();
+  const { mode } = useThemeMode();
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: LoginValues) => {
@@ -26,9 +30,7 @@ export default function Login() {
       await login(values.email, values.password);
       navigate("/");
     } catch (err) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response
-        ?.data?.error;
-      message.error(msg ?? "Login failed, please try again");
+      message.error(errorMessage(err, "Login failed, please try again"));
     } finally {
       setLoading(false);
     }
@@ -50,7 +52,7 @@ export default function Login() {
             size={56}
             style={{
               marginBottom: 12,
-              backgroundColor: "#7C3AED",
+              backgroundColor: brand[mode].colorPrimary,
               fontWeight: 700,
             }}
           >

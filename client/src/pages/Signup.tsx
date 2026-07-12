@@ -11,6 +11,9 @@ import {
 } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useThemeMode } from "../theme/ThemeProvider";
+import { brand } from "../theme/tokens";
+import { errorMessage } from "../lib/format";
 
 type SignupValues = { name: string; email: string; password: string };
 
@@ -18,6 +21,7 @@ export default function Signup() {
   const navigate = useNavigate();
   const { signup } = useAuth();
   const { message } = App.useApp();
+  const { mode } = useThemeMode();
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: SignupValues) => {
@@ -27,9 +31,7 @@ export default function Signup() {
       message.success("Account created");
       navigate("/");
     } catch (err) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response
-        ?.data?.error;
-      message.error(msg ?? "Sign up failed, please try again");
+      message.error(errorMessage(err, "Sign up failed, please try again"));
     } finally {
       setLoading(false);
     }
@@ -51,7 +53,7 @@ export default function Signup() {
             size={56}
             style={{
               marginBottom: 12,
-              backgroundColor: "#7C3AED",
+              backgroundColor: brand[mode].colorPrimary,
               fontWeight: 700,
             }}
           >

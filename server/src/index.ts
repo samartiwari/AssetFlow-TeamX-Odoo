@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { ok } from "./lib/http.js";
 import authRoutes from "./routes/auth.js";
+import departmentRoutes from "./routes/departments.js";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/departments", departmentRoutes);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {

@@ -1,7 +1,17 @@
 import { useState } from "react";
-import { Layout, Menu, Button, Avatar, Dropdown, Typography, Grid } from "antd";
+import {
+  Layout,
+  Menu,
+  Button,
+  Avatar,
+  Dropdown,
+  Typography,
+  Grid,
+  Drawer,
+} from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useThemeMode } from "../theme/ThemeProvider";
+import { brand } from "../theme/tokens";
 import { useAuth, type Role } from "../auth/AuthContext";
 
 const { Header, Sider, Content } = Layout;
@@ -27,11 +37,14 @@ const NAV: NavItem[] = [
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { mode, toggle } = useThemeMode();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const screens = Grid.useBreakpoint();
+
+  const isMobile = !screens.lg;
 
   const visibleNav = NAV.filter(
     (item) => !item.roles || (user && item.roles.includes(user.role))
@@ -45,50 +58,95 @@ export default function AppLayout() {
           : location.pathname.startsWith(item.key)
     )?.key ?? "/";
 
+  const logo = (small: boolean) => (
+    <div
+      style={{
+        height: 56,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: small ? "center" : "flex-start",
+        paddingInline: small ? 0 : 20,
+        fontWeight: 700,
+        fontSize: small ? 16 : 20,
+        letterSpacing: 0.5,
+        color: brand[mode].colorPrimary,
+      }}
+    >
+      {small ? "AF" : "AssetFlow"}
+    </div>
+  );
+
+  const navMenu = (
+    <Menu
+      mode="inline"
+      style={{ borderInlineEnd: "none", background: "transparent" }}
+      selectedKeys={[selectedKey]}
+      onClick={({ key }) => {
+        navigate(key);
+        setDrawerOpen(false);
+      }}
+      items={visibleNav.map((item) => ({
+        key: item.key,
+        label: item.label,
+      }))}
+    />
+  );
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        breakpoint="lg"
-        collapsedWidth={screens.xs ? 0 : 80}
-        width={230}
-      >
-        <div
+      {!isMobile && (
+        <Sider
+          theme={mode}
+          collapsible
+          collapsed={collapsed}
+          onCollapse={setCollapsed}
+          width={230}
           style={{
-            height: 56,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 700,
-            fontSize: collapsed ? 16 : 20,
-            letterSpacing: 0.5,
+            borderInlineEnd: `1px solid ${brand[mode].colorBorder}`,
           }}
         >
-          {collapsed ? "AF" : "AssetFlow"}
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          onClick={({ key }) => navigate(key)}
-          items={visibleNav.map((item) => ({
-            key: item.key,
-            label: item.label,
-          }))}
-        />
-      </Sider>
+          {logo(collapsed)}
+          {navMenu}
+        </Sider>
+      )}
+
+      <Drawer
+        placement="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        width={230}
+        closable={false}
+        styles={{ body: { padding: 0 }, header: { display: "none" } }}
+      >
+        {logo(false)}
+        {navMenu}
+      </Drawer>
 
       <Layout>
         <Header
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             gap: 12,
             paddingInline: 20,
+            borderBottom: `1px solid ${brand[mode].colorBorder}`,
           }}
         >
+          {isMobile ? (
+            <Button
+              type="text"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open navigation"
+              style={{ fontSize: 18 }}
+            >
+              ☰
+            </Button>
+          ) : (
+            <span />
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Button
             type="text"
             onClick={toggle}
@@ -124,6 +182,7 @@ export default function AppLayout() {
               )}
             </div>
           </Dropdown>
+          </div>
         </Header>
 
         <Content style={{ margin: 20 }}>

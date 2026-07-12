@@ -148,4 +148,40 @@ router.get(
   }
 );
 
+// Booking heatmap: how many bookings occupy each weekday/hour slot (peak usage
+// windows). Cancelled bookings are excluded. Manager/admin only.
+router.get(
+  "/booking-heatmap",
+  requireAuth,
+  requireRole("ADMIN", "ASSET_MANAGER", "DEPT_HEAD"),
+  async (_req, res) => {
+    const bookings = await prisma.booking.findMany({
+      where: { status: { not: "CANCELLED" } },
+      select: { startTime: true, endTime: true },
+    });
+
+    // Count each hour a booking spans on its weekday.
+    const counts = new Map<string, number>();
+    for (const b of bookings) {
+      const weekday = b.startTime.getDay();
+      const startHour = b.startTime.getHours();
+      const endHour = b.endTime.getHours();
+      const stop = endHour > startHour ? endHour : startHour + 1;
+      for (let h = startHour; h < stop; h++) {
+        const key = `${weekday}-${h}`;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+
+    let peak = { weekday: 0, hour: 0, count: 0 };
+    const cells = [...counts.entries()].map(([key, count]) => {
+      const [weekday, hour] = key.split("-").map(Number) as [number, number];
+      if (count > peak.count) peak = { weekday, hour, count };
+      return { weekday, hour, count };
+    });
+
+    return ok(res, { cells, peak });
+  }
+);
+
 export default router;
